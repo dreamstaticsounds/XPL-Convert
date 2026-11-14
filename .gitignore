@@ -1,0 +1,7 @@
+# Build output
+/build/
+XPLConvert.jar
+
+# Editors / OS
+*.swp
+.DS_Store
