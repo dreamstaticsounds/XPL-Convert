@@ -53,11 +53,10 @@ public final class Gui {
     private final JTextField installDir = new JTextField();
     /** One parent field for both layouts; targetChanged() fills it in per layout. */
     private final JTextField parentFolder = new JTextField(Options.SDK_PARENT);
-    private final JTextField extraKeys = new JTextField();
     private final JTextField outDir = new JTextField();
     private final JTextField suffix = new JTextField("-sdk");
     private final JCheckBox archSuffixBox =
-            new JCheckBox("Add arch suffix to the SDK binary name  (-arm64 / -arm32)", true);
+            new JCheckBox("Add arch suffix to the SDK binary name  (-arm64)", true);
     private final JCheckBox dryRun = new JCheckBox("Dry run — report only, write nothing");
 
     private final JButton convertBtn = new JButton("Convert");
@@ -239,7 +238,6 @@ public final class Gui {
 
     // ---------------------------------------------------------------- options
     private JPanel optionsPanel() {
-        JButton installBrowse = browseButton(installDir);
         JButton outBrowse = browseButton(outDir);
 
         JPanel p = new JPanel(new GridBagLayout());
@@ -247,9 +245,8 @@ public final class Gui {
         c.insets = new Insets(3, 6, 3, 6);
         c.anchor = GridBagConstraints.WEST;
         int row = 0;
-        addRow(p, c, row++, "Install folder on device (optional):", withBrowse(installDir, installBrowse));
+        addRow(p, c, row++, "Install folder on device (optional):", installDir);
         addRow(p, c, row++, "Parent folder:", parentFolder);
-        addRow(p, c, row++, "Extra-state keys (comma-separated):", extraKeys);
         addRow(p, c, row++, "Output folder (blank = beside each source):", withBrowse(outDir, outBrowse));
         addRow(p, c, row++, "Filename suffix (when no output folder):", suffix);
         c.gridx = 1;
@@ -264,9 +261,7 @@ public final class Gui {
                 + "Synths for classic.<br/>The install folder says where the plugin lives on the device: "
                 + "/media/&lt;drive&gt;, …/VST2 Plugins, or the full plugin folder —<br/>whatever is missing "
                 + "(parent, plugin folder) is filled in, and extra levels such as VST/ are kept as typed. "
-                + "Leave it blank to derive from the preset's own path.<br/>Extra-state keys name values that "
-                + "belong in the SDK's extra state rather than its parameter list (loaded file names, for "
-                + "example).</html>");
+                + "Leave it blank to derive from the preset's own path.</html>");
         GridBagConstraints hc = new GridBagConstraints();
         hc.gridx = 0;
         hc.gridy = row + 1;
@@ -340,11 +335,6 @@ public final class Gui {
         o.sdkParent = o.origParent = parentFolder.getText().trim();
         String id = installDir.getText().trim();
         o.installDir = id.isEmpty() ? null : id;
-        for (String k : extraKeys.getText().split(",")) {
-            if (!k.trim().isEmpty()) {
-                o.extraKeys.add(k.trim());
-            }
-        }
         String od = outDir.getText().trim();
         o.out = od.isEmpty() ? null : od;
         String sx = suffix.getText().trim();
@@ -418,10 +408,9 @@ public final class Gui {
             if (!g.archSuffixBox.isSelected()) {
                 throw new IllegalStateException("arch-suffix checkbox should start selected");
             }
-            if (o.installDir != null || o.out != null || !o.extraKeys.isEmpty() || o.dryRun) {
+            if (o.installDir != null || o.out != null || o.dryRun) {
                 throw new IllegalStateException("unexpected non-default options: installDir="
-                        + o.installDir + " out=" + o.out + " extraKeys=" + o.extraKeys
-                        + " dryRun=" + o.dryRun);
+                        + o.installDir + " out=" + o.out + " dryRun=" + o.dryRun);
             }
             if (!Options.SDK_PARENT.equals(o.sdkParent)) {
                 throw new IllegalStateException("SDK layout should start with parent "

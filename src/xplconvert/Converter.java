@@ -10,8 +10,6 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
@@ -134,32 +132,14 @@ public final class Converter {
                 payload = chunk;
                 note = "state already MPCP";
             } else {
-                // extra keys leave the parameter list (the SDK loader would ignore them as
-                // unknown ids) and go into the chunk's extra section instead
-                Set<String> extraKeys = o.extraKeys;
-                LinkedHashMap<String, String> extraKv = new LinkedHashMap<>();
-                List<String> order = new ArrayList<>();
-                for (Map.Entry<String, String> e : parsed.kv.entrySet()) {
-                    if (extraKeys.contains(e.getKey())) {
-                        extraKv.put(e.getKey(), e.getValue());
-                    } else {
-                        order.add(e.getKey());
-                    }
-                }
-                StringBuilder ex = new StringBuilder();
-                for (Map.Entry<String, String> e : extraKv.entrySet()) {
-                    if (ex.length() > 0) {
-                        ex.append('\t');
-                    }
-                    ex.append(e.getKey()).append('=').append(e.getValue());
-                }
-                byte[] extra = ex.toString().getBytes(StandardCharsets.UTF_8);
-                List<Codec.MpcpEntry> entries = new ArrayList<>(order.size());
-                for (String k : order) {
+                // every key in the classic chunk becomes a parameter; the SDK's extra
+                // section stays empty
+                List<Codec.MpcpEntry> entries = new ArrayList<>(parsed.kv.size());
+                for (String k : parsed.kv.keySet()) {
                     entries.add(new Codec.MpcpEntry(k, Codec.num(parsed.kv.get(k))));
                 }
-                payload = Codec.buildMpcp(entries, extra);
-                note = String.format("text -> MPCP: %d params, %d extra bytes", order.size(), extra.length);
+                payload = Codec.buildMpcp(entries, new byte[0]);
+                note = String.format("text -> MPCP: %d params", entries.size());
             }
             newElem = "state64";
             newEnc = "std";
@@ -315,7 +295,8 @@ public final class Converter {
         String base = stripArch(pp[2]);
         final String newSo;
         if ("sdk".equals(o.target)) {
-            newSo = o.archSuffix ? base + "-" + o.arch + ".so" : base + ".so";
+            // only the arm64 build carries an arch suffix; arm32 is always plain <name>.so
+            newSo = o.archSuffix && "arm64".equals(o.arch) ? base + "-arm64.so" : base + ".so";
         } else {
             newSo = base + ".so";
         }

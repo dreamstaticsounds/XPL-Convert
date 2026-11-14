@@ -22,7 +22,8 @@ public final class Cli {
         out.println();
         out.println("Options:");
         out.println("  --to sdk|original    target layout (required)");
-        out.println("  --arch arm64|arm32   binary name for the SDK layout (default arm64)");
+        out.println("  --arch arm64|arm32   binary name for the SDK layout (default arm64); only the");
+        out.println("                       arm64 build gets a suffix, arm32 stays <name>.so");
         out.println("  --no-arch-suffix     SDK build uses a plain <name>.so instead of <name>-arm64.so");
         out.println("                       (legacy_convert output keeps the package's original name)");
         out.println("  --no-vst-subdir      derived paths keep the .so at the plugin folder root instead of");
@@ -34,8 +35,6 @@ public final class Cli {
         out.println("  --install-dir <path> where the plugin lives ON THE DEVICE (e.g. /media/<drive>):");
         out.println("                       parent and plugin folders are filled in when missing; a path");
         out.println("                       that already names the plugin folder is used as typed");
-        out.println("  --extra-keys <list>  comma-separated keys that belong in the SDK's extra state");
-        out.println("                       instead of its parameter list (default: none)");
         out.println("  --out <dir>          output folder (default: beside each source, with a suffix)");
         out.println("  --suffix <text>      filename suffix when --out is not given (default -sdk / -orig)");
         out.println("  --dry-run            report only, write nothing");
@@ -82,13 +81,6 @@ public final class Cli {
                         break;
                     case "--install-dir":
                         o.installDir = value(args, ++i, a);
-                        break;
-                    case "--extra-keys":
-                        for (String k : value(args, ++i, a).split(",")) {
-                            if (!k.trim().isEmpty()) {
-                                o.extraKeys.add(k.trim());
-                            }
-                        }
                         break;
                     case "--out":
                         o.out = value(args, ++i, a);

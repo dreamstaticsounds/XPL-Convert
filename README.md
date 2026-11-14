@@ -58,7 +58,7 @@ In the window:
 
 1. **Presets** — add `.xpl` files or folders (drag & drop works; folders are walked).
 2. **Convert to** — *SDK layout* or *Classic layout*; the `arm64`/`arm32` picker names the
-   binary for the SDK layout.
+   binary for the SDK layout (`arm64` → `<name>-arm64.so`, `arm32` → plain `<name>.so`).
 3. **Options** (all optional):
    - *Install folder on device* — where the plugin lives on the target device. It
      **composes** with the parent folder instead of replacing it: whatever is missing
@@ -70,15 +70,12 @@ In the window:
    - *Parent folder* — one field that fills itself in per layout: `VST2 Plugins` when the
      SDK layout is selected, `Synths` for classic. It is used when deriving paths (i.e.
      when no install folder is given); edit it for non-standard installs.
-   - *Extra-state keys* — comma-separated keys that belong in the SDK's **extra state**
-     rather than its parameter list (plugins that keep loaded file names there need this,
-     e.g. `wave,wave2,wave3` for a noisetable-using synth). Default: none.
    - *Arch suffix* — on by default: SDK binary names come out `<name>-arm64.so` the way
      `build.py` writes them. Uncheck for a plain `<name>.so`, the name `legacy_convert.py`
-     output keeps (single-architecture packages). Derived SDK paths always include the
-     `VST/` subfolder `build.py` uses; for a legacy plugin with the binary at the folder
-     root, give its folder in *Install folder on device* (or use `--no-vst-subdir` on the
-     command line).
+     output keeps (single-architecture packages); the `arm32` choice is always plain
+     `<name>.so`. Derived SDK paths always include the `VST/` subfolder `build.py` uses;
+     for a legacy plugin with the binary at the folder root, give its folder in
+     *Install folder on device* (or use `--no-vst-subdir` on the command line).
    - *Output folder* — blank means each converted file is written beside its source with a
      `-sdk`/`-orig` suffix.
    - *Dry run* — report only, write nothing.
@@ -97,7 +94,7 @@ java -jar XPLConvert.jar --to <sdk|original> [options] <preset.xpl | folder> ...
 ```
 --to sdk|original    target layout (required)
 --arch arm64|arm32   binary name for the SDK layout (default arm64)
---no-arch-suffix     SDK binary name stays <name>.so with no -arm64/-arm32: the original
+--no-arch-suffix     SDK binary name stays <name>.so with no -arm64: the original
                      name legacy_convert.py output keeps (single-architecture packages)
 --no-vst-subdir      derived paths keep the SDK binary at the plugin folder root instead
                      of VST/<name>.so, matching legacy_convert.py output
@@ -106,7 +103,6 @@ java -jar XPLConvert.jar --to <sdk|original> [options] <preset.xpl | folder> ...
 --install-dir <path> where the plugin lives ON THE DEVICE (e.g. /media/<drive>): parent
                      and plugin folders are filled in when missing; a path that already
                      names the plugin folder is used as typed
---extra-keys <list>  comma-separated keys for the SDK's extra state (default: none)
 --out <dir>          output folder (default: beside each source, with a suffix)
 --suffix <text>      filename suffix when --out is not given (default -sdk / -orig)
 --dry-run            report only, write nothing
@@ -122,7 +118,7 @@ java -jar XPLConvert.jar --to sdk --out out-sdk "./presets"
 # SDK -> classic
 java -jar XPLConvert.jar --to original --out out-classic out-sdk
 
-# 64-bit SDK -> 32-bit SDK (state untouched, only the binary name changes)
+# 64-bit SDK -> 32-bit SDK (state untouched; arm32 is always plain <name>.so)
 java -jar XPLConvert.jar --to sdk --arch arm32 preset.xpl
 
 # a plugin installed by the SDK's legacy_convert.py: plain name at the folder root
@@ -151,8 +147,7 @@ Exit code 0 = every file converted (or already in the target layout), non-zero =
   `<manufacturer> - VST - <name>` attributes.
 - **State, text → MPCP** — the chunk's own keys are kept, values are written as plain
   floats with `norm = -1`. The SDK loader falls back to the plain value whenever `norm`
-  is unusable, so values are exact without needing the plugin's parameter table. Extra
-  keys (if named) move to the chunk's extra section.
+  is unusable, so values are exact without needing the plugin's parameter table.
 - **State, MPCP → text** — plain values from the chunk are re-wrapped in the same FxBk
   header the MPC writes (`CcnK`/`FBCh` + uid + fxVersion). The uid and fxVersion are
   taken from the preset itself (`fxVersion` recovered from `<PLUGIN version>`, since
@@ -175,10 +170,10 @@ Exit code 0 = every file converted (or already in the target layout), non-zero =
   Fix: `--install-dir` with the drive as it exists on that device (the parent and plugin
   folder are filled in automatically).
 - Round-tripping a classic preset through the SDK layout preserves every key and value, the
-  path, the uid, the file structure and line endings. The only thing not representable in
-  an `MPCP` chunk is the *relative order* of extra-state keys inside the classic text chunk;
-  they are appended after the parameters instead. Order has no effect on loading, and the
-  result is stable (converting again is a byte-for-byte no-op).
+  path, the uid, the file structure and line endings. Every classic key becomes an `MPCP`
+  parameter in its original order; keys held in an `MPCP` chunk's extra section are written
+  back after the parameters. Order has no effect on loading, and the result is stable
+  (converting again is a byte-for-byte no-op).
 - Akai's position on the SDK and `.xpl` files: *"the SDK does not generate `.xpl` files.
   Prefer built-in programs."* This is an independent tool for moving existing presets
   between installs.
