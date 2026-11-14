@@ -199,9 +199,11 @@ XPL Convert/
 ├── run.sh                run on Linux/macOS (builds if missing)
 ├── XPLConvert.bat        run on Windows
 ├── MANIFEST.MF           jar manifest (Main-Class)
+├── LICENSE               MIT
 └── src/xplconvert/
     ├── Main.java         entry point: no args = GUI, args = CLI
     ├── Gui.java          the Swing window
+    ├── Theme.java        the dark colour scheme, installed at startup
     ├── Cli.java          command line parsing
     ├── Engine.java       runs a conversion, reports line by line
     ├── Converter.java    path rewriting + state conversion, per preset
@@ -209,3 +211,7 @@ XPL Convert/
     ├── Options.java      one conversion run's settings
     └── ConversionException.java
 ```
+
+## License
+
+MIT — see [LICENSE](LICENSE).
