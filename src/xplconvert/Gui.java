@@ -45,7 +45,7 @@ public final class Gui {
     private final JList<String> list = new JList<>(model);
 
     private final JRadioButton sdkRadio =
-            new JRadioButton("SDK layout  —  VST2 Plugins/<Folder>/VST/<name>-arm64.so, MPCP state", true);
+            new JRadioButton("SDK layout  —  VST2 Plugins/<Folder>/VST/<name>.so, MPCP state", true);
     private final JRadioButton origRadio =
             new JRadioButton("Classic layout  —  Synths/<Folder>/<name>.so, text state");
     private final JComboBox<String> archBox = new JComboBox<>(Options.ARCHES);
@@ -56,7 +56,7 @@ public final class Gui {
     private final JTextField outDir = new JTextField();
     private final JTextField suffix = new JTextField("-sdk");
     private final JCheckBox archSuffixBox =
-            new JCheckBox("Add arch suffix to the SDK binary name  (-arm64)", true);
+            new JCheckBox("Add arch suffix to the SDK binary name  (-arm64)", false);
     private final JCheckBox dryRun = new JCheckBox("Dry run — report only, write nothing");
 
     private final JButton convertBtn = new JButton("Convert");
@@ -90,6 +90,7 @@ public final class Gui {
         sdkRadio.addActionListener(e -> targetChanged());
         origRadio.addActionListener(e -> targetChanged());
         archSuffixBox.addActionListener(e -> targetChanged());
+        archBox.addActionListener(e -> targetChanged());
         targetChanged();
     }
 
@@ -232,8 +233,16 @@ public final class Gui {
             suffix.setText(want);
         }
         archBox.setEnabled(sdkRadio.isSelected() && archSuffixBox.isSelected());
+        sdkRadio.setText(sdkRadioLabel());
         // the parent folder is a property of the layout: fill it in on every switch
         parentFolder.setText(sdkRadio.isSelected() ? Options.SDK_PARENT : Options.ORIG_PARENT);
+    }
+
+    /** The SDK line names the binary the current settings actually produce. */
+    private String sdkRadioLabel() {
+        String so = archSuffixBox.isSelected() && "arm64".equals(archBox.getSelectedItem())
+                ? "<name>-arm64.so" : "<name>.so";
+        return "SDK layout  —  VST2 Plugins/<Folder>/VST/" + so + ", MPCP state";
     }
 
     // ---------------------------------------------------------------- options
@@ -402,11 +411,18 @@ public final class Gui {
             if (!"arm64".equals(o.arch)) {
                 throw new IllegalStateException("default arch should be arm64, got " + o.arch);
             }
-            if (!o.archSuffix || !o.vstSubdir) {
-                throw new IllegalStateException("defaults should be arch suffix + VST/ subfolder (build.py layout)");
+            if (o.archSuffix) {
+                throw new IllegalStateException("arch suffix should be off by default");
             }
-            if (!g.archSuffixBox.isSelected()) {
-                throw new IllegalStateException("arch-suffix checkbox should start selected");
+            if (!o.vstSubdir) {
+                throw new IllegalStateException("VST/ subfolder should default on (build.py layout)");
+            }
+            if (g.archSuffixBox.isSelected()) {
+                throw new IllegalStateException("arch-suffix checkbox should start unselected");
+            }
+            if (!g.sdkRadio.getText().contains("<name>.so")) {
+                throw new IllegalStateException("SDK label should show the plain default name, got "
+                        + g.sdkRadio.getText());
             }
             if (o.installDir != null || o.out != null || o.dryRun) {
                 throw new IllegalStateException("unexpected non-default options: installDir="

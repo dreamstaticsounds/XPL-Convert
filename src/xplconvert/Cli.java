@@ -17,15 +17,16 @@ public final class Cli {
         out.println("  java -jar XPLConvert.jar --to <sdk|original> [options] <preset.xpl | folder> ...");
         out.println();
         out.println("Layouts:");
-        out.println("  sdk       <root>/VST2 Plugins/<Folder>/VST/<name>-arm64.so   bare MPCP in <state64>");
+        out.println("  sdk       <root>/VST2 Plugins/<Folder>/VST/<name>.so         bare MPCP in <state64>");
         out.println("  original  <root>/Synths/<Folder>/<name>.so                  FxBk + text chunk in <state>");
         out.println();
         out.println("Options:");
         out.println("  --to sdk|original    target layout (required)");
         out.println("  --arch arm64|arm32   binary name for the SDK layout (default arm64); only the");
-        out.println("                       arm64 build gets a suffix, arm32 stays <name>.so");
-        out.println("  --no-arch-suffix     SDK build uses a plain <name>.so instead of <name>-arm64.so");
-        out.println("                       (legacy_convert output keeps the package's original name)");
+        out.println("                       arm64 build can take a suffix, arm32 stays <name>.so");
+        out.println("  --arch-suffix        name SDK binaries <name>-arm64.so the way build.py writes");
+        out.println("                       them (default off: plain <name>.so, the legacy_convert name)");
+        out.println("  --no-arch-suffix     plain <name>.so -- the default, accepted for compatibility");
         out.println("  --no-vst-subdir      derived paths keep the .so at the plugin folder root instead of");
         out.println("                       VST/<name>.so (legacy_convert packages have no VST/ subfolder)");
         out.println("  --sdk-parent <name>  folder the SDK build installs under (default \""
@@ -43,7 +44,8 @@ public final class Cli {
         out.println("Examples:");
         out.println("  java -jar XPLConvert.jar --to sdk --out out-sdk \"./presets\"");
         out.println("  java -jar XPLConvert.jar --to sdk --arch arm32 preset.xpl");
-        out.println("  java -jar XPLConvert.jar --to sdk --no-arch-suffix --no-vst-subdir legacy.xpl");
+        out.println("  java -jar XPLConvert.jar --to sdk --arch-suffix preset.xpl");
+        out.println("  java -jar XPLConvert.jar --to sdk --no-vst-subdir legacy.xpl");
         out.println("  java -jar XPLConvert.jar --to original --install-dir \"/media/1234/Synths/My Plugin\" old.xpl");
     }
 
@@ -66,6 +68,9 @@ public final class Cli {
                         break;
                     case "--arch":
                         o.arch = value(args, ++i, a);
+                        break;
+                    case "--arch-suffix":
+                        o.archSuffix = true;
                         break;
                     case "--no-arch-suffix":
                         o.archSuffix = false;

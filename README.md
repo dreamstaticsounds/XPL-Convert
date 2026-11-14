@@ -9,7 +9,7 @@ install layout is invisible to the other. Two things differ between the layouts:
 
 | | ORIGINAL (classic layout, e.g. Open MPC) | SDK (Akai's MPC Plugin SDK) |
 |---|---|---|
-| binary | `<root>/Synths/<Folder>/<name>.so` | `<root>/VST2 Plugins/<Folder>/VST/<name>-arm64.so` |
+| binary | `<root>/Synths/<Folder>/<name>.so` | `<root>/VST2 Plugins/<Folder>/VST/<name>.so` |
 | state | FxBk-wrapped `3\tkey=value` text chunk in `<state>` | bare `MPCP` chunk in `<state64>` |
 
 This tool rewrites **both** — the `<PLUGIN file>` path and the state itself — in either
@@ -58,7 +58,8 @@ In the window:
 
 1. **Presets** — add `.xpl` files or folders (drag & drop works; folders are walked).
 2. **Convert to** — *SDK layout* or *Classic layout*; the `arm64`/`arm32` picker names the
-   binary for the SDK layout (`arm64` → `<name>-arm64.so`, `arm32` → plain `<name>.so`).
+   binary for the SDK layout when the arch suffix is on (`arm64` → `<name>-arm64.so`,
+   `arm32` → plain `<name>.so`).
 3. **Options** (all optional):
    - *Install folder on device* — where the plugin lives on the target device. It
      **composes** with the parent folder instead of replacing it: whatever is missing
@@ -70,12 +71,12 @@ In the window:
    - *Parent folder* — one field that fills itself in per layout: `VST2 Plugins` when the
      SDK layout is selected, `Synths` for classic. It is used when deriving paths (i.e.
      when no install folder is given); edit it for non-standard installs.
-   - *Arch suffix* — on by default: SDK binary names come out `<name>-arm64.so` the way
-     `build.py` writes them. Uncheck for a plain `<name>.so`, the name `legacy_convert.py`
-     output keeps (single-architecture packages); the `arm32` choice is always plain
-     `<name>.so`. Derived SDK paths always include the `VST/` subfolder `build.py` uses;
-     for a legacy plugin with the binary at the folder root, give its folder in
-     *Install folder on device* (or use `--no-vst-subdir` on the command line).
+   - *Arch suffix* — **off by default**: SDK binary names come out plain `<name>.so`, the
+     name `legacy_convert.py` output keeps (single-architecture packages). Check it for
+     `<name>-arm64.so` the way `build.py` writes them; the `arm32` choice is always plain
+     `<name>.so` either way. Derived SDK paths always include the `VST/` subfolder
+     `build.py` uses; for a legacy plugin with the binary at the folder root, give its
+     folder in *Install folder on device* (or use `--no-vst-subdir` on the command line).
    - *Output folder* — blank means each converted file is written beside its source with a
      `-sdk`/`-orig` suffix.
    - *Dry run* — report only, write nothing.
@@ -94,8 +95,9 @@ java -jar XPLConvert.jar --to <sdk|original> [options] <preset.xpl | folder> ...
 ```
 --to sdk|original    target layout (required)
 --arch arm64|arm32   binary name for the SDK layout (default arm64)
---no-arch-suffix     SDK binary name stays <name>.so with no -arm64: the original
-                     name legacy_convert.py output keeps (single-architecture packages)
+--arch-suffix        SDK binary name is <name>-arm64.so, the way build.py writes them
+                     (default off: plain <name>.so, what legacy_convert.py output keeps)
+--no-arch-suffix     plain <name>.so -- the default, accepted for compatibility
 --no-vst-subdir      derived paths keep the SDK binary at the plugin folder root instead
                      of VST/<name>.so, matching legacy_convert.py output
 --sdk-parent <name>  folder the SDK build installs under (default "VST2 Plugins")
@@ -112,8 +114,8 @@ java -jar XPLConvert.jar --to <sdk|original> [options] <preset.xpl | folder> ...
 Examples:
 
 ```sh
-# classic -> SDK, into a folder
-java -jar XPLConvert.jar --to sdk --out out-sdk "./presets"
+# classic -> SDK with build.py's <name>-arm64.so naming
+java -jar XPLConvert.jar --to sdk --arch-suffix --out out-sdk "./presets"
 
 # SDK -> classic
 java -jar XPLConvert.jar --to original --out out-classic out-sdk
@@ -122,7 +124,7 @@ java -jar XPLConvert.jar --to original --out out-classic out-sdk
 java -jar XPLConvert.jar --to sdk --arch arm32 preset.xpl
 
 # a plugin installed by the SDK's legacy_convert.py: plain name at the folder root
-java -jar XPLConvert.jar --to sdk --no-arch-suffix --no-vst-subdir --out out-legacy legacy.xpl
+java -jar XPLConvert.jar --to sdk --no-vst-subdir --out out-legacy legacy.xpl
 
 # point a preset at wherever the plugin lives on another device
 java -jar XPLConvert.jar --to sdk \
@@ -135,11 +137,12 @@ Exit code 0 = every file converted (or already in the target layout), non-zero =
 ## What conversion does
 
 - **Paths** — the `<PLUGIN file>` attribute is rebuilt for the target layout: parent
-  folder (`Synths` ↔ `VST2 Plugins`), the `VST/` segment, and the binary name
-  (`name.so` ↔ `name-arm64.so`). The two SDK details are switchable because the SDK's own
-  tools differ: `build.py` writes `VST/<slug>-arm64.so`, while `legacy_convert.py` output
-  keeps whatever name and location the package had — usually `<name>.so` at the folder
-  root for a single-architecture package (`--no-arch-suffix` / `--no-vst-subdir`).
+  folder (`Synths` ↔ `VST2 Plugins`), the `VST/` segment, and the binary name. The two SDK
+  details are switchable because the SDK's own tools differ: `build.py` writes
+  `VST/<slug>-arm64.so` (turn on *Arch suffix* / `--arch-suffix`), while
+  `legacy_convert.py` output keeps whatever name and location the package had — usually
+  `<name>.so` at the folder root for a single-architecture package, and the default here
+  (`--no-vst-subdir` for the root location).
   `--install-dir` composes with derivation instead of replacing it: it supplies the root,
   missing parent/plugin folders are filled in, and levels already present (a plugin
   folder, a `VST/` subfolder) are kept as typed. A path with no folder level at all

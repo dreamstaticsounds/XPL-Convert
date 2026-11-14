@@ -12,9 +12,10 @@ public final class Options {
     /** "sdk" (VST2 Plugins + MPCP) or "original" (Synths + classic text chunk). */
     public String target;
     public String arch = "arm64";
-    /** false = plain <name>.so, the name legacy_convert output keeps; true = <name>-arm64.so
-     *  the way build.py names them. Only arm64 ever gets the suffix: arm32 is always plain. */
-    public boolean archSuffix = true;
+    /** false = plain <name>.so, the name legacy_convert output keeps (the default);
+     *  true = <name>-arm64.so the way build.py names them. Only arm64 ever gets the
+     *  suffix: arm32 is always plain. */
+    public boolean archSuffix = false;
     /** false = the .so sits at the plugin folder root (legacy packages), true = VST/ subfolder
      *  (the build.py layout). */
     public boolean vstSubdir = true;
