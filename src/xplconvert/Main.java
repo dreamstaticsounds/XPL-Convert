@@ -1,7 +1,6 @@
 package xplconvert;
 
 import javax.swing.SwingUtilities;
-import javax.swing.UIManager;
 
 /** Entry point: arguments run the CLI, no arguments open the GUI. */
 public final class Main {
@@ -9,6 +8,7 @@ public final class Main {
     }
 
     public static void main(String[] args) {
+        Theme.install();
         if (args.length > 0) {
             if ("--help".equals(args[0]) || "-h".equals(args[0])) {
                 Cli.usage(System.out);
@@ -21,13 +21,6 @@ public final class Main {
             System.exit(Cli.run(args));
             return;
         }
-        SwingUtilities.invokeLater(() -> {
-            try {
-                UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-            } catch (Exception ignored) {
-                // fall back to the default look and feel
-            }
-            new Gui().show();
-        });
+        SwingUtilities.invokeLater(() -> new Gui().show());
     }
 }
